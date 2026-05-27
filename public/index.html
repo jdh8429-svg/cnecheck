@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>한글 유틸리티 — 맞춤법 교정 · 외래어 순화</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="logo">가</span>
+    <div>
+      <h1>한글 유틸리티</h1>
+      <p class="subtitle">공문서·보도자료 전용 맞춤법 교정 &amp; 외래어 순화</p>
+    </div>
+    <div id="status-badge" class="badge badge-loading">연결 확인 중…</div>
+  </div>
+</header>
+
+<main>
+  <!-- ── Tabs ─────────────────────────── -->
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="spell"    role="tab">✏️ 맞춤법 교정</button>
+    <button class="tab"        data-tab="foreign"  role="tab">🔄 외래어 순화</button>
+    <button class="tab"        data-tab="dict"     role="tab">📖 순화어 사전</button>
+  </div>
+
+  <!-- ── Spell Check Panel ─────────────── -->
+  <section class="panel active" id="panel-spell">
+    <div class="card">
+      <label class="field-label" for="spell-input">교정할 텍스트 입력 <span class="limit" id="spell-count">0 / 3000자</span></label>
+      <textarea id="spell-input" placeholder="공문서나 보도자료 본문을 붙여 넣으세요…" maxlength="3000"></textarea>
+      <div class="actions">
+        <button class="btn primary" id="spell-btn">맞춤법 교정하기</button>
+        <button class="btn ghost"   id="spell-clear">지우기</button>
+      </div>
+    </div>
+
+    <div class="result-area hidden" id="spell-result">
+      <div class="result-card" id="spell-summary"></div>
+      <div class="card" id="spell-corrections-wrap">
+        <h3 class="result-title">교정 제안</h3>
+        <div id="spell-corrections"></div>
+      </div>
+      <div class="card">
+        <h3 class="result-title">원문 분석 (kogrammar 출력)</h3>
+        <pre id="spell-raw" class="raw-output"></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Foreign Word Panel ────────────── -->
+  <section class="panel" id="panel-foreign">
+    <div class="card">
+      <label class="field-label" for="foreign-input">순화할 텍스트 입력</label>
+      <textarea id="foreign-input" placeholder="외래어가 포함된 공문서 본문을 붙여 넣으세요…"></textarea>
+      <div class="actions">
+        <button class="btn primary" id="foreign-btn">외래어 순화하기</button>
+        <button class="btn ghost"   id="foreign-clear">지우기</button>
+      </div>
+    </div>
+
+    <div class="result-area hidden" id="foreign-result">
+      <div class="result-card" id="foreign-summary"></div>
+      <div class="diff-grid">
+        <div class="card">
+          <h3 class="result-title">변환 전</h3>
+          <div id="foreign-before" class="diff-text"></div>
+        </div>
+        <div class="card">
+          <h3 class="result-title">변환 후</h3>
+          <div id="foreign-after" class="diff-text"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 class="result-title">변환 목록</h3>
+        <div id="foreign-changes"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Dictionary Panel ──────────────── -->
+  <section class="panel" id="panel-dict">
+    <div class="card">
+      <div class="dict-search-wrap">
+        <input id="dict-search" type="text" placeholder="외래어 또는 순화어 검색…" />
+      </div>
+      <div id="dict-content" class="dict-content">
+        <div class="spinner-wrap"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>맞춤법 교정 엔진: <a href="https://github.com/Alfex4936/Hangul-MCP" target="_blank" rel="noopener">Hangul-MCP (kogrammar)</a>
+     &nbsp;·&nbsp; 외래어 기준: <a href="https://www.korean.go.kr/" target="_blank" rel="noopener">국립국어원</a></p>
+</footer>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

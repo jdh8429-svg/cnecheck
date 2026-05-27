@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+bin/
+*.exe
+.env
+naver_debug.txt
