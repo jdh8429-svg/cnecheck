@@ -4,6 +4,7 @@ passport key를 자동으로 갱신하며 30분 캐시합니다.
 """
 import re
 import time
+import html as html_lib
 import requests
 
 _HEADERS = {
@@ -50,21 +51,80 @@ def _call_api(text: str, key: str) -> dict:
     return r.json()
 
 
+# ── 교정 필터 ───────────────────────────────────────────────
+
+def _char_set(s: str) -> set:
+    """한글·영문만 추출한 글자 집합 (공백·기호 제외)."""
+    return set(re.sub(r'[^가-힣A-Za-z]', '', s))
+
+
+def _overlap_ratio(a: str, b: str) -> float:
+    """두 문자열의 Jaccard 유사도 (글자 집합 기준)."""
+    ca, cb = _char_set(a), _char_set(b)
+    if not ca or not cb:
+        return 1.0
+    return len(ca & cb) / len(ca | cb)
+
+
+def _should_skip(orig: str, sugg: str) -> bool:
+    """
+    True를 반환하면 해당 교정 항목을 출력에서 제외합니다.
+
+    적용 규칙:
+    1. HTML 엔티티(&quot; 등)가 제안에 포함된 경우 제외
+    2. 영문+한글 혼용 원문 → 고유명사(SFA반도체 등) 보호
+    3. '앤' 포함 원문 → 브랜드명 표기(블루원골프앤리조트 등) 보호
+    4. 글자 유사도 0.4 미만 → 정렬 오류(misalignment)로 판단, 제외
+    """
+    # 1. HTML 엔티티 필터
+    if re.search(r'&[a-zA-Z#][^;]{0,8};', sugg):
+        return True
+
+    # 2. 영문+한글 혼용 → 고유명사 추정 (예: SFA반도체, QR코드)
+    if re.search(r'[A-Za-z]', orig) and re.search(r'[가-힣]', orig):
+        return True
+
+    # 3. '앤' 포함 → 브랜드명 표기 보호 (예: 에프앤에이치, 골프앤리조트)
+    if '앤' in orig:
+        return True
+
+    # 4. 글자 유사도 < 0.4 → 정렬 오류 또는 전혀 다른 단어 제안
+    if _overlap_ratio(orig, sugg) < 0.4:
+        return True
+
+    # 5. 5음절 이상 순한글 복합어의 띄어쓰기만 변경 → 고유명사(기관명·회사명) 추정
+    orig_kor = re.sub(r'[^가-힣]', '', orig)
+    sugg_kor = re.sub(r'[^가-힣]', '', sugg)
+    if len(orig_kor) >= 5 and orig_kor == sugg_kor:
+        return True
+
+    return False
+
+
+# ── 파싱 ────────────────────────────────────────────────────
+
 def _parse(data: dict, original_text: str) -> dict:
     result = data.get('message', {}).get('result', {})
     errata_count = result.get('errata_count', 0)
     origin_html  = result.get('origin_html', '')
     correct_html = result.get('html', '')
-    notag_html   = result.get('notag_html', original_text)
+    notag_html   = html_lib.unescape(result.get('notag_html', original_text))
 
     errors      = re.findall(r"<span class='result_underline'>([^<]+)</span>", origin_html)
-    # Naver uses red_text (spelling), blue_text (vocabulary), green_text (spacing)
     suggestions = re.findall(r"<em class='(?:red_text|blue_text|green_text)'>([^<]+)</em>", correct_html)
 
     corrections = []
     for orig, sugg in zip(errors, suggestions):
-        if orig.strip() != sugg.strip():
-            corrections.append({'original': orig, 'suggestion': sugg})
+        orig = html_lib.unescape(orig).strip()
+        sugg = html_lib.unescape(sugg).strip()
+
+        if orig == sugg:
+            continue
+
+        if _should_skip(orig, sugg):
+            continue
+
+        corrections.append({'original': orig, 'suggestion': sugg})
 
     lines = [f'• "{c["original"]}" → "{c["suggestion"]}"' for c in corrections]
     raw = '\n'.join(lines) if lines else '교정 제안 없음 — 맞춤법 오류가 발견되지 않았습니다.'
