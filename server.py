@@ -208,17 +208,36 @@ def foreign_convert():
     if not text:
         return jsonify({'error': '텍스트를 입력해주세요.'}), 400
 
-    result = text
+    # 이미 치환된 구간을 표시할 마스크 방식으로 이중치환 방지
+    # 텍스트를 토큰 리스트로 관리: (is_replaced, text)
+    tokens = [(False, text)]
     changes = []
-    # Longer phrases first to avoid partial matches
+    seen = set()
+
     for foreign, korean in sorted(FOREIGN_WORDS.items(), key=lambda x: -len(x[0])):
         pattern = re.compile(re.escape(foreign))
-        if pattern.search(result):
+        new_tokens = []
+        found = False
+        for is_replaced, chunk in tokens:
+            if is_replaced:
+                new_tokens.append((True, chunk))
+                continue
+            parts = pattern.split(chunk)
+            if len(parts) == 1:
+                new_tokens.append((False, chunk))
+            else:
+                found = True
+                for i, part in enumerate(parts):
+                    if part:
+                        new_tokens.append((False, part))
+                    if i < len(parts) - 1:
+                        new_tokens.append((True, korean))
+        if found and foreign not in seen:
             changes.append({'from': foreign, 'to': korean})
-            result = pattern.sub(f'\x00{korean}\x00', result)  # temp sentinel
+            seen.add(foreign)
+        tokens = new_tokens
 
-    # Replace sentinels (prevents double-substitution)
-    result = result.replace('\x00', '')
+    result = ''.join(chunk for _, chunk in tokens)
 
     return jsonify({
         'original': text,
@@ -231,16 +250,20 @@ def foreign_convert():
 @app.route('/api/foreign-words')
 def list_foreign_words():
     categories = {
+        '행정·문서': ['가이드라인', '매뉴얼', '리포트', '체크리스트', '로드맵', '타임라인',
+                    '어젠다', '아젠다', '프레젠테이션', '프레스릴리즈', '뉴스레터', '리플릿',
+                    'MOU', 'TF', 'TF팀', 'T/F팀', 'KPI', 'SNS', '바우처', '인센티브'],
         '회의·행사': ['미팅', '워크숍', '세미나', '포럼', '심포지엄', '콘퍼런스', '컨퍼런스',
-                    '어젠다', '아젠다', '프레젠테이션', '프리젠테이션', '웨비나'],
-        '문서·보고': ['매뉴얼', '리포트', '가이드라인', '가이드', '체크리스트', '로드맵',
-                    '타임라인', '마일스톤', '보도자료', '프레스릴리즈', '뉴스레터'],
-        '디지털·IT': ['데이터', '빅데이터', '플랫폼', '네트워크', '인프라', '소프트웨어',
-                     '하드웨어', '홈페이지', '웹사이트', '이메일', '클라우드', '모바일'],
-        '경영·조직': ['아웃소싱', '컨설팅', '리더십', '매니지먼트', '거버넌스', '스타트업',
-                    '파트너십', '팀워크', '시너지', '콜라보레이션', '이노베이션'],
-        '공공·행정': ['MOU', 'TF', '태스크포스', '샌드박스', '규제샌드박스', 'SNS',
-                    '바우처', '인센티브', 'KPI', '원스톱', '원스톱서비스'],
+                    '웨비나', '리허설', '해커톤', '콘테스트', '아트페어'],
+        '디지털·IT': ['데이터', '빅데이터', '플랫폼', '네트워크', '인프라', '홈페이지',
+                     '이메일', '클라우드', '모바일', '다운로드', '업로드', '북마크',
+                     '아이콘', '이모티콘', '해시태그', '팝업 창', '에듀테크', 'QR', '큐알'],
+        '교육·학교': ['리터러시', '멘토링', '챌린지', '플로깅', '하이파이브',
+                    '수학여행', '가정통신문', '뉴스레터', '에듀테크', '굿즈'],
+        '경영·조직': ['아웃소싱', '컨설팅', '리더십', '거버넌스', '스타트업',
+                    '파트너십', '시너지', '콜라보레이션', '코디네이터', '코워킹'],
+        '공공·행정': ['MOU', '태스크포스', '샌드박스', '원스톱', '인터체인지',
+                    '딥페이크', '블라인드', '백브리핑', '부스', '키트'],
     }
     assigned = set()
     grouped = {}

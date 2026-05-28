@@ -24,28 +24,6 @@ $$('.tab').forEach(btn => {
   });
 });
 
-/* ── Status badge ─────────────────────────────────────── */
-async function checkStatus() {
-  const badge = $('#status-badge');
-  try {
-    const r = await fetch('/api/status');
-    const d = await r.json();
-    if (d.kogrammar_ready) {
-      badge.textContent = '✓ kogrammar 연결됨';
-      badge.className = 'badge badge-ok';
-    } else if (d.binary_exists) {
-      badge.textContent = '⚠ 바이너리 있음 (초기화 실패)';
-      badge.className = 'badge badge-error';
-    } else {
-      badge.textContent = '✗ kogrammar 없음';
-      badge.className = 'badge badge-error';
-    }
-  } catch {
-    badge.textContent = '서버 연결 오류';
-    badge.className = 'badge badge-error';
-  }
-}
-checkStatus();
 
 /* ── Character counter ────────────────────────────────── */
 const spellInput = $('#spell-input');
