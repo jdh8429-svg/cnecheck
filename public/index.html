@@ -21,13 +21,13 @@
 <main>
   <!-- ── Tabs ─────────────────────────── -->
   <div class="tabs" role="tablist">
-    <button class="tab active" data-tab="spell"    role="tab">✏️ 맞춤법 교정</button>
-    <button class="tab"        data-tab="foreign"  role="tab">🔄 외래어 순화</button>
+    <button class="tab active" data-tab="foreign"  role="tab">🔄 외래어 순화</button>
+    <button class="tab"        data-tab="spell"    role="tab">✏️ 맞춤법 교정</button>
     <button class="tab"        data-tab="dict"     role="tab">📖 순화어 사전</button>
   </div>
 
   <!-- ── Spell Check Panel ─────────────── -->
-  <section class="panel active" id="panel-spell">
+  <section class="panel" id="panel-spell">
     <div class="card">
       <label class="field-label" for="spell-input">교정할 텍스트 입력 <span class="limit" id="spell-count">0 / 3000자</span></label>
       <textarea id="spell-input" placeholder="공문서나 보도자료 본문을 붙여 넣으세요…" maxlength="3000"></textarea>
@@ -51,7 +51,7 @@
   </section>
 
   <!-- ── Foreign Word Panel ────────────── -->
-  <section class="panel" id="panel-foreign">
+  <section class="panel active" id="panel-foreign">
     <div class="card">
       <label class="field-label" for="foreign-input">순화할 텍스트 입력</label>
       <textarea id="foreign-input" placeholder="외래어가 포함된 공문서 본문을 붙여 넣으세요…"></textarea>
