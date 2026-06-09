@@ -92,10 +92,12 @@ def _should_skip(orig: str, sugg: str) -> bool:
     if _overlap_ratio(orig, sugg) < 0.4:
         return True
 
-    # 5. 5음절 이상 순한글 복합어의 띄어쓰기만 변경 → 고유명사(기관명·회사명) 추정
+    # 5. 띄어쓰기만 다르고 공백이 2개 이상 추가된 경우 → 회사명·기관명 과분할로 판단
+    #    (예: 웅진보안시스템→웅진 보안 시스템 은 2개 추가 → 차단)
+    #    (예: 지속가능한→지속 가능한 은 1개 추가 → 허용)
     orig_kor = re.sub(r'[^가-힣]', '', orig)
     sugg_kor = re.sub(r'[^가-힣]', '', sugg)
-    if len(orig_kor) >= 5 and orig_kor == sugg_kor:
+    if orig_kor == sugg_kor and (sugg.count(' ') - orig.count(' ')) >= 2:
         return True
 
     return False
