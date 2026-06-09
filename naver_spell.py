@@ -100,6 +100,23 @@ def _should_skip(orig: str, sugg: str) -> bool:
     if orig_kor == sugg_kor and (sugg.count(' ') - orig.count(' ')) >= 2:
         return True
 
+    # 6. 건물·시설 고유명사 보호 (체육관, 문화원, 박물관 등 시설 접미사 포함)
+    #    조사를 제거한 뒤 시설 접미사 여부 확인
+    _POSTFIX_RE = re.compile(r'(?:에서|에서는|에서도|에서만|의|을|를|이|가|은|는|도|로|으로|과|와|에|에는|에도)$')
+    _FACILITY_SUFFIXES = [
+        '체육관', '문화원', '박물관', '도서관', '미술관', '복지관',
+        '교육관', '연수원', '음악당', '경기장', '회관', '수영장',
+        '강당', '운동장', '체육센터', '문화센터', '교육센터',
+    ]
+    orig_base = _POSTFIX_RE.sub('', orig.replace(' ', ''))
+    if any(orig_base.endswith(s) for s in _FACILITY_SUFFIXES):
+        return True
+
+    # 7. 교육 분류 공식 용어 보호 (직업계고, 특성화고, 자율고 등)
+    _EDU_TERMS = ['직업계고', '직업계', '특성화고', '자율고', '마이스터고', '예체능계']
+    if any(t in orig for t in _EDU_TERMS):
+        return True
+
     return False
 
 
